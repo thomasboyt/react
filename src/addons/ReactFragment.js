@@ -11,7 +11,11 @@
 
 'use strict';
 
-var ReactElement = require('ReactElement');
+// TODO: This is copied from ReactElement to avoid circular dependency
+function isValidElement(object) {
+  var isElement = !!(object && object._isReactElement);
+  return isElement;
+};
 
 var warning = require('warning');
 
@@ -109,7 +113,7 @@ var ReactFragment = {
         );
         return object;
       }
-      if (ReactElement.isValidElement(object)) {
+      if (isValidElement(object)) {
         warning(
           false,
           'React.addons.createFragment does not accept a ReactElement ' +
@@ -171,7 +175,7 @@ var ReactFragment = {
         // the warning to extract.
         for (var key in fragment) {
           if (fragment.hasOwnProperty(key) &&
-              ReactElement.isValidElement(fragment[key])) {
+              isValidElement(fragment[key])) {
             // This looks like a fragment object, we should provide an
             // early warning.
             return ReactFragment.extract(fragment);

@@ -16,6 +16,8 @@ var ReactCurrentOwner = require('ReactCurrentOwner');
 var assign = require('Object.assign');
 var warning = require('warning');
 
+var ReactFragment = require('ReactFragment');
+
 var RESERVED_PROPS = {
   key: true,
   ref: true
@@ -184,6 +186,14 @@ ReactElement.createElement = function(type, config, children) {
         props[propName] = defaultProps[propName];
       }
     }
+  }
+
+  if (type === 'frag') {
+    var childMap = {};
+    props.children.forEach(function(child, idx) {
+      childMap['frag-' + idx] = child;
+    });
+    return ReactFragment.create(childMap);
   }
 
   return new ReactElement(
