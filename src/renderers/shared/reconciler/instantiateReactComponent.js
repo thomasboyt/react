@@ -83,6 +83,9 @@ function instantiateReactComponent(node, parentCompositeType) {
       // represenations. I.e. ART. Once those are updated to use the string
       // representation, we can drop this code path.
       instance = new element.type(element);
+    } else if (element.type === 'frag') {
+      console.log('found fragment');
+      instance = ReactNativeComponent.createFragment(element);
     } else {
       instance = new ReactCompositeComponentWrapper();
     }

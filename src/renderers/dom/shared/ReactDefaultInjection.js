@@ -24,6 +24,7 @@ var ReactComponentBrowserEnvironment =
   require('ReactComponentBrowserEnvironment');
 var ReactDefaultBatchingStrategy = require('ReactDefaultBatchingStrategy');
 var ReactDOMComponent = require('ReactDOMComponent');
+var ReactDOMFragment = require('ReactDOMFragment');
 var ReactDOMButton = require('ReactDOMButton');
 var ReactDOMForm = require('ReactDOMForm');
 var ReactDOMImg = require('ReactDOMImg');
@@ -104,6 +105,10 @@ function inject() {
 
   ReactInjection.NativeComponent.injectTextComponentClass(
     ReactDOMTextComponent
+  );
+
+  ReactInjection.NativeComponent.injectFragmentComponentClass(
+    ReactDOMFragment
   );
 
   ReactInjection.NativeComponent.injectAutoWrapper(

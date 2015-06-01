@@ -631,6 +631,7 @@ ReactDOMComponent.Mixin = {
         );
       }
     } else if (nextChildren != null) {
+      debugger;
       this.updateChildren(nextChildren, transaction, context);
     }
   },

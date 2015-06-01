@@ -19,6 +19,7 @@ var genericComponentClass = null;
 // This registry keeps track of wrapper classes around native tags.
 var tagToComponentClass = {};
 var textComponentClass = null;
+var fragmentComponentClass = null;
 
 var ReactNativeComponentInjection = {
   // This accepts a class that receives the tag string. This is a catch all
@@ -30,6 +31,11 @@ var ReactNativeComponentInjection = {
   // rendered as props.
   injectTextComponentClass: function(componentClass) {
     textComponentClass = componentClass;
+  },
+  // This accepts a class that acts as a fragment component, which renders its
+  // children without a parent
+  injectFragmentComponentClass: function(componentClass) {
+    fragmentComponentClass = componentClass;
   },
   // This accepts a keyed object with classes as values. Each key represents a
   // tag. That particular tag will use this class instead of the generic one.
@@ -84,6 +90,10 @@ function createInstanceForText(text) {
   return new textComponentClass(text);
 }
 
+function createFragment(fragment) {
+  return new fragmentComponentClass(fragment);
+}
+
 /**
  * @param {ReactComponent} component
  * @return {boolean}
@@ -98,6 +108,7 @@ var ReactNativeComponent = {
   createInstanceForText: createInstanceForText,
   isTextComponent: isTextComponent,
   injection: ReactNativeComponentInjection,
+  createFragment: createFragment,
 };
 
 module.exports = ReactNativeComponent;
