@@ -183,8 +183,7 @@ var ReactMultiChild = {
       );
       this._renderedChildren = children;
       var mountImages = [];
-      var index = 0;
-      var numInserted = 0;
+      var nodesInserted = 0;
       for (var name in children) {
         if (children.hasOwnProperty(name)) {
           var child = children[name];
@@ -202,8 +201,7 @@ var ReactMultiChild = {
             mountImage = mountImage.join('');
           }
 
-          child._nodeIndex = numInserted;
-          child._mountIndex = index;
+          child._nodeIndex = nodesInserted;
 
           // TODO: This is ugly, maybe add helper method like
           // `isFragment(child)`?
@@ -217,8 +215,7 @@ var ReactMultiChild = {
 
           mountImages.push(mountImage);
 
-          index++;
-          numInserted += child._nodeCount;
+          nodesInserted += child._nodeCount;
         }
       }
       return mountImages;
@@ -305,9 +302,6 @@ var ReactMultiChild = {
       var name;
       // `nextIndex` will increment for each child in `nextChildren`, but
       // `lastIndex` will be the last index visited in `prevChildren`.
-      var lastIndex = 0;
-      var nextIndex = 0;
-
       var lastNodeIndex = 0;
       var nextNodeIndex = 0;
 
@@ -322,26 +316,21 @@ var ReactMultiChild = {
         if (prevChild === nextChild) {
           this.moveChild(prevChild, nextNodeIndex, lastNodeIndex);
 
-          lastIndex = Math.max(prevChild._mountIndex, lastIndex);
-          prevChild._mountIndex = nextIndex;
-
           lastNodeIndex = Math.max(prevChild._nodeIndex, lastNodeIndex);
           prevChild._nodeIndex = nextNodeIndex;
 
         } else {
           if (prevChild) {
-            // Update `lastIndex` before `_mountIndex` gets unset by unmounting.
-            lastIndex = Math.max(prevChild._mountIndex, lastIndex);
+            // Update `lastIndex` before `_nodeIndex` gets unset by unmounting.
             lastNodeIndex = Math.max(prevChild._nodeIndex, lastNodeIndex);
             this._unmountChildByName(prevChild, name);
 
           }
           // The child must be instantiated before it's mounted.
           this._mountChildByNameAtIndex(
-            nextChild, name, nextIndex, nextNodeIndex, transaction, context
+            nextChild, name, nextNodeIndex, transaction, context
           );
         }
-        nextIndex++;
         nextNodeIndex += nextChild._nodeCount;
       }
       // Remove children that are no longer present.
@@ -426,14 +415,13 @@ var ReactMultiChild = {
      *
      * @param {ReactComponent} child Component to mount.
      * @param {string} name Name of the child.
-     * @param {number} index Index at which to insert the child.
+     * @param {number} nodeIndex Index at which to insert the child.
      * @param {ReactReconcileTransaction} transaction
      * @private
      */
     _mountChildByNameAtIndex: function(
       child,
       name,
-      index,
       nodeIndex,
       transaction,
       context) {
@@ -445,7 +433,6 @@ var ReactMultiChild = {
         transaction,
         context
       );
-      child._mountIndex = index;
       child._nodeIndex = nodeIndex;
 
       if (!Array.isArray(mountImages)) {
@@ -468,7 +455,6 @@ var ReactMultiChild = {
      */
     _unmountChildByName: function(child, name) {
       this.removeChild(child);
-      child._mountIndex = null;
       child._nodeIndex = null;
       child._nodeCount = null;
     },

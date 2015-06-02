@@ -86,7 +86,7 @@ assign(reactComponentExpectInternal.prototype, {
         continue;
       }
       if (renderedChildren[name]) {
-        if (renderedChildren[name]._mountIndex === childIndex) {
+        if (renderedChildren[name]._nodeIndex === childIndex) {
           return new reactComponentExpectInternal(renderedChildren[name]);
         }
       }

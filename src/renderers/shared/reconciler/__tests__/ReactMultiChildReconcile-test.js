@@ -95,7 +95,7 @@ var FriendsStatusDisplay = React.createClass({
       var child = statusDisplays[name];
       var isPresent = !!child;
       if (isPresent) {
-        orderOfUsernames[child._mountIndex] = getOriginalKey(name);
+        orderOfUsernames[child._nodeIndex] = getOriginalKey(name);
       }
     }
     var res = {};

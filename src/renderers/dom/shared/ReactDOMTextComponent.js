@@ -53,7 +53,7 @@ assign(ReactDOMTextComponent.prototype, {
 
     // Properties
     this._rootNodeID = null;
-    this._mountIndex = 0;
+    this._nodeIndex = 0;
   },
 
   /**

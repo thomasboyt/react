@@ -111,10 +111,7 @@ function instantiateReactComponent(node, parentCompositeType) {
   // Sets up the instance. This can probably just move into the constructor now.
   instance.construct(node);
 
-  // These two fields are used by the DOM and ART diffing algorithms
-  // respectively. Instead of using expandos on components, we should be
-  // storing the state needed by the diffing algorithms elsewhere.
-  instance._mountIndex = 0;
+  // Used by the ART diffing algorthim
   instance._mountImage = null;
 
   // This number is the true offset in nodes after flattening fragments
