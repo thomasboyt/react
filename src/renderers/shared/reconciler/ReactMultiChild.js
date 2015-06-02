@@ -198,6 +198,10 @@ var ReactMultiChild = {
             context
           );
 
+          if (Array.isArray(mountImage)) {
+            mountImage = mountImage.join('');
+          }
+
           child._nodeIndex = numInserted;
           child._mountIndex = index;
 
@@ -303,35 +307,42 @@ var ReactMultiChild = {
       // `lastIndex` will be the last index visited in `prevChildren`.
       var lastIndex = 0;
       var nextIndex = 0;
+
+      var lastNodeIndex = 0;
+      var nextNodeIndex = 0;
+
       for (name in nextChildren) {
         if (!nextChildren.hasOwnProperty(name)) {
           continue;
         }
+
         var prevChild = prevChildren && prevChildren[name];
         var nextChild = nextChildren[name];
+
         if (prevChild === nextChild) {
           this.moveChild(prevChild, nextIndex, lastIndex);
 
           lastIndex = Math.max(prevChild._mountIndex, lastIndex);
           prevChild._mountIndex = nextIndex;
 
-          // TODO: Update nodeIndex
+          lastNodeIndex = Math.max(prevChild._nodeIndex, lastNodeIndex);
+          prevChild._nodeIndex = nextNodeIndex;
 
         } else {
           if (prevChild) {
             // Update `lastIndex` before `_mountIndex` gets unset by unmounting.
             lastIndex = Math.max(prevChild._mountIndex, lastIndex);
+            lastNodeIndex = Math.max(prevChild._nodeIndex, lastNodeIndex);
             this._unmountChildByName(prevChild, name);
-
-            // TODO: Update nodeIndex
 
           }
           // The child must be instantiated before it's mounted.
           this._mountChildByNameAtIndex(
-            nextChild, name, nextIndex, transaction, context
+            nextChild, name, nextIndex, nextNodeIndex, transaction, context
           );
         }
         nextIndex++;
+        nextNodeIndex += nextChild._nodeCount;
       }
       // Remove children that are no longer present.
       for (name in prevChildren) {
@@ -375,11 +386,13 @@ var ReactMultiChild = {
      * Creates a child component.
      *
      * @param {ReactComponent} child Component to create.
-     * @param {string} mountImage Markup to insert.
+     * @param {array<string>} mountImages Markup to insert.
      * @protected
      */
-    createChild: function(child, mountImage) {
-      enqueueMarkup(this._rootNodeID, mountImage, child._mountIndex);
+    createChild: function(child, mountImages) {
+      for (var i = 0; i < child._nodeCount; i++) {
+        enqueueMarkup(this._rootNodeID, mountImages[i], child._nodeIndex + i);
+      }
     },
 
     /**
@@ -419,18 +432,27 @@ var ReactMultiChild = {
       child,
       name,
       index,
+      nodeIndex,
       transaction,
       context) {
       // Inlined for performance, see `ReactInstanceHandles.createReactID`.
       var rootID = this._rootNodeID + name;
-      var mountImage = ReactReconciler.mountComponent(
+      var mountImages = ReactReconciler.mountComponent(
         child,
         rootID,
         transaction,
         context
       );
       child._mountIndex = index;
-      this.createChild(child, mountImage);
+      child._nodeIndex = nodeIndex;
+
+      if (!Array.isArray(mountImages)) {
+        mountImages = [mountImages];
+      }
+
+      child._nodeCount = mountImages.length;
+
+      this.createChild(child, mountImages);
     },
 
     /**
@@ -445,6 +467,8 @@ var ReactMultiChild = {
     _unmountChildByName: function(child, name) {
       this.removeChild(child);
       child._mountIndex = null;
+      child._nodeIndex = null;
+      child._nodeCount = null;
     },
 
   },

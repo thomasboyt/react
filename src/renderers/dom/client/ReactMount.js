@@ -275,6 +275,11 @@ function mountComponentIntoNode(
   var markup = ReactReconciler.mountComponent(
     componentInstance, rootID, transaction, context
   );
+
+  if (Array.isArray(markup)) {
+    markup = markup.join('');
+  }
+
   componentInstance._isTopLevel = true;
   ReactMount._mountImageIntoNode(markup, container, shouldReuseMarkup);
 }

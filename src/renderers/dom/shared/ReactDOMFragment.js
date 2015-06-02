@@ -16,6 +16,19 @@ var ReactMultiChild = require('ReactMultiChild');
 var ReactDOMComponent = require('ReactDOMComponent');
 
 var assign = require('Object.assign');
+var validateDOMNesting = require('validateDOMNesting');
+
+// TODO: Dedupe this between here and ReactDOMComponent
+function processChildContext(context, inst) {
+  if (__DEV__) {
+    // Pass down our tag name to child components for validation purposes
+    context = assign({}, context);
+    var info = context[validateDOMNesting.ancestorInfoContextKey];
+    context[validateDOMNesting.ancestorInfoContextKey] =
+      validateDOMNesting.updatedAncestorInfo(info, inst._tag, inst);
+  }
+  return context;
+}
 
 /**
  * Creates a new React class that only contains components.
@@ -38,6 +51,18 @@ ReactDOMFragment.Mixin = {
 
     var tagContent = this._createContentMarkup(transaction, context);
     return tagContent;
+  },
+
+  _createContentMarkup(transaction, context) {
+    var props = this._currentElement.props;
+
+    var mountImages = this.mountChildren(
+      props.children,
+      transaction,
+      processChildContext(context, this)
+    );
+
+    return mountImages;
   },
 
   // TODO: new receiveComponent hook
