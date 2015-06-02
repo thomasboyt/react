@@ -36,6 +36,8 @@ ReactDOMFragment.Mixin = {
     return tagContent;
   },
 
+  // TODO: new receiveComponent hook
+
   unmountComponent: function() {
     this.unmountChildren();
     this._rootNodeID = null;
@@ -44,8 +46,11 @@ ReactDOMFragment.Mixin = {
 
 assign(
   ReactDOMFragment.prototype,
+
   // TODO: instead of overriding mount/unmount, split common functionality to
   // new mixin for clarity
+  // TODO: Also don't include all of the actual DOM things we're not using
+  // (events, etc)
   ReactDOMComponent.Mixin,
   ReactDOMFragment.Mixin,
 
