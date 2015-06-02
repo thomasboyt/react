@@ -198,22 +198,23 @@ var ReactMultiChild = {
             context
           );
 
+          child._nodeIndex = numInserted;
+          child._mountIndex = index;
+
           // TODO: This is ugly, maybe add helper method like
           // `isFragment(child)`?
           if (child._renderedComponent &&
               child._renderedComponent._currentElement.type === 'frag') {
-            child._nodeIndex = numInserted + child._renderedComponent._numNodes;
             child._nodeCount = child._renderedComponent._numNodes;
 
           } else {
-            numInserted += 1;
             child._nodeCount = 1;
           }
 
-          child._mountIndex = index;
-
           mountImages.push(mountImage);
+
           index++;
+          numInserted += child._nodeCount;
         }
       }
       return mountImages;
@@ -310,13 +311,20 @@ var ReactMultiChild = {
         var nextChild = nextChildren[name];
         if (prevChild === nextChild) {
           this.moveChild(prevChild, nextIndex, lastIndex);
+
           lastIndex = Math.max(prevChild._mountIndex, lastIndex);
           prevChild._mountIndex = nextIndex;
+
+          // TODO: Update nodeIndex
+
         } else {
           if (prevChild) {
             // Update `lastIndex` before `_mountIndex` gets unset by unmounting.
             lastIndex = Math.max(prevChild._mountIndex, lastIndex);
             this._unmountChildByName(prevChild, name);
+
+            // TODO: Update nodeIndex
+
           }
           // The child must be instantiated before it's mounted.
           this._mountChildByNameAtIndex(
