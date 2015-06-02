@@ -184,18 +184,34 @@ var ReactMultiChild = {
       this._renderedChildren = children;
       var mountImages = [];
       var index = 0;
+      var numInserted = 0;
       for (var name in children) {
         if (children.hasOwnProperty(name)) {
           var child = children[name];
           // Inlined for performance, see `ReactInstanceHandles.createReactID`.
           var rootID = this._rootNodeID + name;
+
           var mountImage = ReactReconciler.mountComponent(
             child,
             rootID,
             transaction,
             context
           );
+
+          // TODO: This is ugly, maybe add helper method like
+          // `isFragment(child)`?
+          if (child._renderedComponent &&
+              child._renderedComponent._currentElement.type === 'frag') {
+            child._nodeIndex = numInserted + child._renderedComponent._numNodes;
+            child._nodeCount = child._renderedComponent._numNodes;
+
+          } else {
+            numInserted += 1;
+            child._nodeCount = 1;
+          }
+
           child._mountIndex = index;
+
           mountImages.push(mountImage);
           index++;
         }
@@ -365,7 +381,9 @@ var ReactMultiChild = {
      * @protected
      */
     removeChild: function(child) {
-      enqueueRemove(this._rootNodeID, child._mountIndex);
+      for (var i = 0; i < child._nodeCount; i++) {
+        enqueueRemove(this._rootNodeID, child._nodeIndex + i);
+      }
     },
 
     /**

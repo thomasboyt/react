@@ -26,11 +26,15 @@ var assign = require('Object.assign');
 function ReactDOMFragment(element) {
   this._rootNodeID = null;
   this._renderedChildren = null;
+  this._numNodes = null;
 }
 
 ReactDOMFragment.Mixin = {
   mountComponent: function(rootID, transaction, context) {
     this._rootNodeID = rootID;
+
+    var props = this._currentElement.props;
+    this._numNodes = props.children.length;
 
     var tagContent = this._createContentMarkup(transaction, context);
     return tagContent;
@@ -41,6 +45,7 @@ ReactDOMFragment.Mixin = {
   unmountComponent: function() {
     this.unmountChildren();
     this._rootNodeID = null;
+    this._numNodes = null;
   }
 };
 

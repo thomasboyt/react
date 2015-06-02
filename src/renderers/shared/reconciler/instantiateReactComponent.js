@@ -117,6 +117,13 @@ function instantiateReactComponent(node, parentCompositeType) {
   instance._mountIndex = 0;
   instance._mountImage = null;
 
+  // This number is the true offset in nodes after flattening fragments
+  instance._nodeIndex = null;
+
+  // This is the number of root nodes in this component (1 for regular, n for
+  // fragments)
+  instance._nodeCount = null;
+
   if (__DEV__) {
     instance._isOwnerNecessary = false;
     instance._warnedAboutRefsInRender = false;
