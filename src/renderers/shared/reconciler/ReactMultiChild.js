@@ -320,7 +320,7 @@ var ReactMultiChild = {
         var nextChild = nextChildren[name];
 
         if (prevChild === nextChild) {
-          this.moveChild(prevChild, nextIndex, lastIndex);
+          this.moveChild(prevChild, nextNodeIndex, lastNodeIndex);
 
           lastIndex = Math.max(prevChild._mountIndex, lastIndex);
           prevChild._mountIndex = nextIndex;
@@ -369,16 +369,18 @@ var ReactMultiChild = {
      * Moves a child component to the supplied index.
      *
      * @param {ReactComponent} child Component to move.
-     * @param {number} toIndex Destination index of the element.
-     * @param {number} lastIndex Last index visited of the siblings of `child`.
+     * @param {number} toNodeIndex Destination index of the element.
+     * @param {number} lastNodeIndex Last index visited of the siblings of `child`.
      * @protected
      */
-    moveChild: function(child, toIndex, lastIndex) {
+    moveChild: function(child, toNodeIndex, lastNodeIndex) {
       // If the index of `child` is less than `lastIndex`, then it needs to
       // be moved. Otherwise, we do not need to move it because a child will be
       // inserted or moved before `child`.
-      if (child._mountIndex < lastIndex) {
-        enqueueMove(this._rootNodeID, child._mountIndex, toIndex);
+      if (child._nodeIndex < lastNodeIndex) {
+        for (var i = 0; i < child._nodeCount; i++) {
+          enqueueMove(this._rootNodeID, child._nodeIndex + i, toNodeIndex + i);
+        }
       }
     },
 
