@@ -40,7 +40,7 @@ function processChildContext(context, inst) {
 function ReactDOMFragment(element) {
   this._rootNodeID = null;
   this._renderedChildren = null;
-  this._numNodes = null;
+  this._nodeCount = null;
 }
 
 ReactDOMFragment.Mixin = {
@@ -48,7 +48,7 @@ ReactDOMFragment.Mixin = {
     this._rootNodeID = rootID;
 
     var props = this._currentElement.props;
-    this._numNodes = ReactChildren.count(props.children);
+    this._updateNodeCount(props.children);
 
     var tagContent = this._createContentMarkup(transaction, context);
     return tagContent;
@@ -66,13 +66,29 @@ ReactDOMFragment.Mixin = {
     return mountImages;
   },
 
-  // TODO: new receiveComponent hook
+  receiveComponent: function(nextElement, transaction, context) {
+    var props = nextElement.props;
+    this._updateNodeCount(props.children);
+
+    // TODO: new receiveComponent hook
+    var prevElement = this._currentElement;
+    this._currentElement = nextElement;
+    this.updateComponent(transaction, prevElement, nextElement, context);
+  },
 
   unmountComponent: function() {
     this.unmountChildren();
     this._rootNodeID = null;
-    this._numNodes = null;
-  }
+  },
+
+  /*
+   * Set the nodeCount of the parent composite component
+   * TODO: This is almost definitely not the right place for this :(
+   */
+  _updateNodeCount(children) {
+    var nodeCount = ReactChildren.count(children);
+    this._currentElement._owner._nodeCount = nodeCount;
+  },
 };
 
 assign(

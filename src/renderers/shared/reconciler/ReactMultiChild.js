@@ -14,9 +14,19 @@
 
 var ReactComponentEnvironment = require('ReactComponentEnvironment');
 var ReactMultiChildUpdateTypes = require('ReactMultiChildUpdateTypes');
+var ReactInstanceHandles = require('ReactInstanceHandles');
 
 var ReactReconciler = require('ReactReconciler');
 var ReactChildReconciler = require('ReactChildReconciler');
+
+function getNodeCount(child) {
+  if (child._renderedComponent &&
+      child._renderedComponent._currentElement.type === 'frag') {
+    return child._renderedComponent._nodeCount;
+  } else {
+    return 1;
+  }
+}
 
 /**
  * Updating children of a component may trigger recursive updates. The depth is
@@ -203,18 +213,11 @@ var ReactMultiChild = {
 
           child._nodeIndex = nodesInserted;
 
-          // TODO: This is ugly, maybe add helper method like
-          // `isFragment(child)`?
-          if (child._renderedComponent &&
-              child._renderedComponent._currentElement.type === 'frag') {
-            child._nodeCount = child._renderedComponent._numNodes;
-
-          } else {
-            child._nodeCount = 1;
-          }
-
           mountImages.push(mountImage);
 
+          // Copy the wrapped component's node count to the parent so that it can
+          // be referenced after the component has been unmounted and can no
+          // longer be accessed
           nodesInserted += child._nodeCount;
         }
       }
@@ -331,8 +334,10 @@ var ReactMultiChild = {
             nextChild, name, nextNodeIndex, transaction, context
           );
         }
+
         nextNodeIndex += nextChild._nodeCount;
       }
+
       // Remove children that are no longer present.
       for (name in prevChildren) {
         if (prevChildren.hasOwnProperty(name) &&
@@ -367,7 +372,7 @@ var ReactMultiChild = {
       // be moved. Otherwise, we do not need to move it because a child will be
       // inserted or moved before `child`.
       if (child._nodeIndex < lastNodeIndex) {
-        for (var i = 0; i < child._nodeCount; i++) {
+        for (var i = 0; i < getNodeCount(child); i++) {
           enqueueMove(this._rootNodeID, child._nodeIndex + i, toNodeIndex + i);
         }
       }
@@ -381,8 +386,18 @@ var ReactMultiChild = {
      * @protected
      */
     createChild: function(child, mountImages) {
+      var parentID = this._rootNodeID;
+      var totalNodeIndex = child._nodeIndex;
+
+      if (this._currentElement.type === 'frag') {
+        // TODO: Properly traverse up the tree until a valid parent is found
+        // TODO: How should the root being a fragment component be handled?
+        parentID = ReactInstanceHandles.getParentID(this._rootNodeID);
+        totalNodeIndex = this._currentElement._owner._nodeIndex + child._nodeIndex;
+      }
+
       for (var i = 0; i < child._nodeCount; i++) {
-        enqueueMarkup(this._rootNodeID, mountImages[i], child._nodeIndex + i);
+        enqueueMarkup(parentID, mountImages[i], totalNodeIndex + i);
       }
     },
 
@@ -393,8 +408,18 @@ var ReactMultiChild = {
      * @protected
      */
     removeChild: function(child) {
+      var parentID = this._rootNodeID;
+      var totalNodeIndex = child._nodeIndex;
+
+      if (this._currentElement.type === 'frag') {
+        // TODO: Properly traverse up the tree until a valid parent is found
+        // TODO: How should the root being a fragment component be handled?
+        parentID = ReactInstanceHandles.getParentID(this._rootNodeID);
+        totalNodeIndex = this._currentElement._owner._nodeIndex + child._nodeIndex;
+      }
+
       for (var i = 0; i < child._nodeCount; i++) {
-        enqueueRemove(this._rootNodeID, child._nodeIndex + i);
+        enqueueRemove(parentID, totalNodeIndex + i);
       }
     },
 
@@ -439,8 +464,6 @@ var ReactMultiChild = {
         mountImages = [mountImages];
       }
 
-      child._nodeCount = mountImages.length;
-
       this.createChild(child, mountImages);
     },
 
@@ -456,7 +479,6 @@ var ReactMultiChild = {
     _unmountChildByName: function(child, name) {
       this.removeChild(child);
       child._nodeIndex = null;
-      child._nodeCount = null;
     },
 
   },
