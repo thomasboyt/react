@@ -243,6 +243,9 @@ var ReactCompositeComponentMixin = {
       transaction,
       this._processChildContext(context)
     );
+
+    this._nodeCount = this._renderedComponent._nodeCount;
+
     if (inst.componentDidMount) {
       transaction.getReactMountReady().enqueue(inst.componentDidMount, inst);
     }
@@ -607,6 +610,8 @@ var ReactCompositeComponentMixin = {
       inst.state = nextState;
       inst.context = nextContext;
     }
+
+    this._nodeCount = this._renderedComponent._nodeCount;
   },
 
   _processPendingState: function(props, context) {

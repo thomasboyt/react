@@ -48,7 +48,7 @@ ReactDOMFragment.Mixin = {
     this._rootNodeID = rootID;
 
     var props = this._currentElement.props;
-    this._numNodes = ReactChildren.count(props.children);
+    this._nodeCount = ReactChildren.count(props.children);
 
     var tagContent = this._createContentMarkup(transaction, context);
     return tagContent;
@@ -66,13 +66,21 @@ ReactDOMFragment.Mixin = {
     return mountImages;
   },
 
-  // TODO: new receiveComponent hook
+  receiveComponent: function(nextElement, transaction, context) {
+    var props = nextElement.props;
+    this._nodeCount = ReactChildren.count(props.children);
+
+    // TODO: new updateCompoent hook
+    var prevElement = this._currentElement;
+    this._currentElement = nextElement;
+    this.updateComponent(transaction, prevElement, nextElement, context);
+  },
 
   unmountComponent: function() {
     this.unmountChildren();
     this._rootNodeID = null;
     this._numNodes = null;
-  }
+  },
 };
 
 assign(

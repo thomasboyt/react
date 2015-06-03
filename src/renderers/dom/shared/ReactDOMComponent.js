@@ -256,6 +256,7 @@ function ReactDOMComponent(tag) {
   this._previousStyleCopy = null;
   this._rootNodeID = null;
   this._wrapperState = null;
+  this._nodeCount = null;
 }
 
 ReactDOMComponent.displayName = 'ReactDOMComponent';
@@ -278,6 +279,7 @@ ReactDOMComponent.Mixin = {
    */
   mountComponent: function(rootID, transaction, context) {
     this._rootNodeID = rootID;
+    this._nodeCount = 1;
 
     var props = this._currentElement.props;
 

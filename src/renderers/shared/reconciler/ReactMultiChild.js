@@ -14,6 +14,7 @@
 
 var ReactComponentEnvironment = require('ReactComponentEnvironment');
 var ReactMultiChildUpdateTypes = require('ReactMultiChildUpdateTypes');
+var ReactInstanceHandles = require('ReactInstanceHandles');
 
 var ReactReconciler = require('ReactReconciler');
 var ReactChildReconciler = require('ReactChildReconciler');
@@ -203,16 +204,6 @@ var ReactMultiChild = {
 
           child._nodeIndex = nodesInserted;
 
-          // TODO: This is ugly, maybe add helper method like
-          // `isFragment(child)`?
-          if (child._renderedComponent &&
-              child._renderedComponent._currentElement.type === 'frag') {
-            child._nodeCount = child._renderedComponent._numNodes;
-
-          } else {
-            child._nodeCount = 1;
-          }
-
           mountImages.push(mountImage);
 
           nodesInserted += child._nodeCount;
@@ -381,8 +372,18 @@ var ReactMultiChild = {
      * @protected
      */
     createChild: function(child, mountImages) {
+      var parentID = this._rootNodeID;
+      var totalNodeIndex = child._nodeIndex;
+
+      if (this._currentElement.type === 'frag') {
+        // TODO: Properly traverse up the tree until a valid parent is found
+        // TODO: How should the root being a fragment component be handled?
+        parentID = ReactInstanceHandles.getParentID(parentID);
+        totalNodeIndex = this._currentElement._owner._nodeIndex + child._nodeIndex;
+      }
+
       for (var i = 0; i < child._nodeCount; i++) {
-        enqueueMarkup(this._rootNodeID, mountImages[i], child._nodeIndex + i);
+        enqueueMarkup(parentID, mountImages[i], totalNodeIndex + i);
       }
     },
 
@@ -393,8 +394,20 @@ var ReactMultiChild = {
      * @protected
      */
     removeChild: function(child) {
+      var parentID = this._rootNodeID;
+      var totalNodeIndex = child._nodeIndex;
+      console.log(child._nodeIndex);
+
+      if (this._currentElement.type === 'frag') {
+        // TODO: Properly traverse up the tree until a valid parent is found
+        // TODO: How should the root being a fragment component be handled?
+        parentID = ReactInstanceHandles.getParentID(parentID);
+        totalNodeIndex = this._currentElement._owner._nodeIndex + child._nodeIndex;
+      }
+
       for (var i = 0; i < child._nodeCount; i++) {
-        enqueueRemove(this._rootNodeID, child._nodeIndex + i);
+        console.log('removing node in ' + parentID + ' at ' + (totalNodeIndex + i));
+        enqueueRemove(parentID, totalNodeIndex + i);
       }
     },
 
@@ -438,8 +451,6 @@ var ReactMultiChild = {
       if (!Array.isArray(mountImages)) {
         mountImages = [mountImages];
       }
-
-      child._nodeCount = mountImages.length;
 
       this.createChild(child, mountImages);
     },

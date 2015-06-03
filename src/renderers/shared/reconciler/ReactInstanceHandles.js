@@ -329,6 +329,8 @@ var ReactInstanceHandles = {
    */
   _getNextDescendantID: getNextDescendantID,
 
+  getParentID: getParentID,
+
   isAncestorIDOf: isAncestorIDOf,
 
   SEPARATOR: SEPARATOR,
