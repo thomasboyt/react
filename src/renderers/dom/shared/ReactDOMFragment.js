@@ -14,6 +14,7 @@
 
 var ReactMultiChild = require('ReactMultiChild');
 var ReactDOMComponent = require('ReactDOMComponent');
+var ReactChildren = require('ReactChildren');
 
 var assign = require('Object.assign');
 var validateDOMNesting = require('validateDOMNesting');
@@ -47,7 +48,7 @@ ReactDOMFragment.Mixin = {
     this._rootNodeID = rootID;
 
     var props = this._currentElement.props;
-    this._numNodes = props.children.length;
+    this._numNodes = ReactChildren.count(props.children);
 
     var tagContent = this._createContentMarkup(transaction, context);
     return tagContent;
