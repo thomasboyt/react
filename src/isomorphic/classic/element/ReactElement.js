@@ -186,6 +186,10 @@ ReactElement.createElement = function(type, config, children) {
     }
   }
 
+  if (type === 'frag') {
+    return props.children;
+  }
+
   return new ReactElement(
     type,
     key,

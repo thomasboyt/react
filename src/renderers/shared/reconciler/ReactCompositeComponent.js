@@ -26,6 +26,7 @@ var ReactUpdates = require('ReactUpdates');
 
 var assign = require('Object.assign');
 var emptyObject = require('emptyObject');
+var flattenChildren = require('flattenChildren');
 var invariant = require('invariant');
 var shouldUpdateReactComponent = require('shouldUpdateReactComponent');
 var warning = require('warning');
@@ -99,7 +100,7 @@ var ReactCompositeComponentMixin = {
     this._pendingReplaceState = false;
     this._pendingForceUpdate = false;
 
-    this._renderedComponent = null;
+    this._renderedComponents = null;
 
     this._context = null;
     this._mountOrder = 0;
@@ -213,7 +214,7 @@ var ReactCompositeComponentMixin = {
     this._pendingReplaceState = false;
     this._pendingForceUpdate = false;
 
-    var renderedElement;
+    var renderedElements;
 
     var previouslyMounting = ReactLifeCycle.currentlyMountingInstance;
     ReactLifeCycle.currentlyMountingInstance = this;
@@ -227,30 +228,43 @@ var ReactCompositeComponentMixin = {
         }
       }
 
-      renderedElement = this._renderValidatedComponent();
+      renderedElements = this._renderValidatedComponent();
     } finally {
       ReactLifeCycle.currentlyMountingInstance = previouslyMounting;
     }
 
-    this._renderedComponent = this._instantiateReactComponent(
-      renderedElement,
-      this._currentElement.type // The wrapping type
-    );
+    if (!Array.isArray(renderedElements)) {
+      renderedElements = [renderedElements];
+    }
 
-    var markup = ReactReconciler.mountComponent(
-      this._renderedComponent,
-      rootID,
-      transaction,
-      this._processChildContext(context)
-    );
+    renderedElements = flattenChildren(renderedElements);
 
-    this._nodeCount = this._renderedComponent._nodeCount;
+    this._renderedComponents = [];
+
+    var markups = [];
+
+    for (var name in renderedElements) {
+      var component = this._instantiateReactComponent(
+        renderedElements[name],
+        this._currentElement.type // The wrapping type
+      );
+
+      var markup = ReactReconciler.mountComponent(
+        component,
+        rootID + name,
+        transaction,
+        this._processChildContext(context)
+      );
+
+      this._renderedComponents.push(component);
+      markups.push(markup);
+    }
 
     if (inst.componentDidMount) {
       transaction.getReactMountReady().enqueue(inst.componentDidMount, inst);
     }
 
-    return markup;
+    return markups;
   },
 
   /**
@@ -272,8 +286,11 @@ var ReactCompositeComponentMixin = {
       }
     }
 
-    ReactReconciler.unmountComponent(this._renderedComponent);
-    this._renderedComponent = null;
+    for (var i = 0; i < this._renderedComponents.length; i++) {
+      ReactReconciler.unmountComponent(this._renderedComponents[i]);
+    }
+
+    this._renderedComponents = null;
 
     // Reset pending fields
     this._pendingStateQueue = null;
@@ -610,8 +627,6 @@ var ReactCompositeComponentMixin = {
       inst.state = nextState;
       inst.context = nextContext;
     }
-
-    this._nodeCount = this._renderedComponent._nodeCount;
   },
 
   _processPendingState: function(props, context) {
@@ -767,14 +782,15 @@ var ReactCompositeComponentMixin = {
     } finally {
       ReactCurrentOwner.current = null;
     }
-    invariant(
-      // TODO: An `isValidNode` function would probably be more appropriate
-      renderedComponent === null || renderedComponent === false ||
-      ReactElement.isValidElement(renderedComponent),
-      '%s.render(): A valid ReactComponent must be returned. You may have ' +
-        'returned undefined, an array or some other invalid object.',
-      this.getName() || 'ReactCompositeComponent'
-    );
+    // XXX: #yolo
+    // invariant(
+    //   // TODO: An `isValidNode` function would probably be more appropriate
+    //   renderedComponent === null || renderedComponent === false ||
+    //   ReactElement.isValidElement(renderedComponent),
+    //   '%s.render(): A valid ReactComponent must be returned. You may have ' +
+    //     'returned undefined, an array or some other invalid object.',
+    //   this.getName() || 'ReactCompositeComponent'
+    // );
     return renderedComponent;
   },
 
