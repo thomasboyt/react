@@ -239,8 +239,6 @@ var ReactCompositeComponentMixin = {
 
     renderedElements = flattenChildren(renderedElements);
 
-    this._renderedComponents = [];
-
     var markups = [];
 
     for (var name in renderedElements) {
@@ -249,6 +247,8 @@ var ReactCompositeComponentMixin = {
         this._currentElement.type // The wrapping type
       );
 
+      renderedElements[name] = component;
+
       var markup = ReactReconciler.mountComponent(
         component,
         rootID + name,
@@ -256,9 +256,10 @@ var ReactCompositeComponentMixin = {
         this._processChildContext(context)
       );
 
-      this._renderedComponents.push(component);
       markups.push(markup);
     }
+
+    this._renderedComponents = renderedElements;
 
     if (inst.componentDidMount) {
       transaction.getReactMountReady().enqueue(inst.componentDidMount, inst);
@@ -711,34 +712,58 @@ var ReactCompositeComponentMixin = {
    * @internal
    */
   _updateRenderedComponent: function(transaction, context) {
-    var prevComponentInstance = this._renderedComponent;
-    var prevRenderedElement = prevComponentInstance._currentElement;
-    var nextRenderedElement = this._renderValidatedComponent();
-    if (shouldUpdateReactComponent(prevRenderedElement, nextRenderedElement)) {
-      ReactReconciler.receiveComponent(
-        prevComponentInstance,
-        nextRenderedElement,
-        transaction,
-        this._processChildContext(context)
-      );
-    } else {
-      // These two IDs are actually the same! But nothing should rely on that.
-      var thisID = this._rootNodeID;
-      var prevComponentID = prevComponentInstance._rootNodeID;
-      ReactReconciler.unmountComponent(prevComponentInstance);
+    var prevComponentInstances = this._renderedComponents;
+    var nextRenderedElements = flattenChildren(this._renderValidatedComponent());
 
-      this._renderedComponent = this._instantiateReactComponent(
-        nextRenderedElement,
-        this._currentElement.type
-      );
-      var nextMarkup = ReactReconciler.mountComponent(
-        this._renderedComponent,
-        thisID,
-        transaction,
-        this._processChildContext(context)
-      );
-      this._replaceNodeWithMarkupByID(prevComponentID, nextMarkup);
+    for (var name in nextRenderedElements) {
+      if (!nextRenderedElements.hasOwnProperty(name)) {
+        continue;
+      }
+
+      var prevComponentInstance = prevComponentInstances[name];
+      var prevRenderedElement = prevComponentInstance && prevComponentInstance._currentElement;
+      var nextRenderedElement = nextRenderedElements[name];
+
+      if (shouldUpdateReactComponent(prevRenderedElement, nextRenderedElement)) {
+        ReactReconciler.receiveComponent(
+          prevComponentInstance,
+          nextRenderedElement,
+          transaction,
+          this._processChildContext(context)
+        );
+
+      } else {
+        // These two IDs are actually the same! But nothing should rely on that.
+        var thisID = this._rootNodeID;
+        var prevComponentID;
+
+        if (prevComponentInstance) {
+          prevComponentID = prevComponentInstance._rootNodeID;
+          ReactReconciler.unmountComponent(prevComponentInstance);
+        }
+
+        this._renderedComponents = this._instantiateReactComponent(
+          nextRenderedElement,
+          this._currentElement.type
+        );
+
+        var nextMarkup = ReactReconciler.mountComponent(
+          this._renderedComponent,
+          thisID + name,
+          transaction,
+          this._processChildContext(context)
+        );
+
+        // TODO: This only works for replacements, not for inserts...
+        if (prevComponentInstance) {
+          this._replaceNodeWithMarkupByID(prevComponentID, nextMarkup);
+        } else {
+          // TODO: Insert new component
+        }
+      }
     }
+
+    // TODO: Unmount removed components
   },
 
   /**
